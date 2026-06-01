@@ -1,0 +1,37 @@
+server:
+  port: 8080
+
+#debug: true
+
+spring:
+  application:
+    name: exam-system-server-new
+  datasource:
+    url: jdbc:mysql://192.168.187.128:3306/hello_mp?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  banner:
+    location: classpath:banner.txt
+
+
+
+# Knife4j 配置
+knife4j:
+  enable: true              # 开启 Knife4j 文档功能
+  setting:
+    language: zh_cn         # 界面语言：简体中文
+    swagger-model-name: 实体类列表    # 实体类模块的名称显示
+    enable-footer: false    # 禁用默认页脚
+    enable-footer-custom: true       # 启用自定义页脚
+    footer-custom-content: 刘老爷的api文档  # 自定义页脚内容
+
+
+# SpringDoc 配置
+springdoc:
+  api-docs:
+    enabled: true           # 开启 API 文档 JSON 输出
+    path: /v3/api-docs      # API 文档 JSON 的访问路径
+  swagger-ui:
+    enabled: true           # 开启 Swagger UI 界面
+    path: /swagger-ui.html  # 原生 Swagger UI 的访问路径

@@ -1,34 +1,57 @@
 HELP.md
 target/
+*.jar
+*.war
+*.ear
+*.class
+
 .mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea/**
-.idea/workspace.xml
+### IDE 配置 ###
+# IntelliJ IDEA - 只忽略个人工作区配置
+#.idea/workspace.xml
+#.idea/tasks.xml
+#.idea/shelf/
+#.idea/dictionaries/
+.idea/
 *.iws
 *.iml
-*.ipr
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
+# VS Code
 .vscode/
+
+# Eclipse/STS
+.classpath
+.project
+.settings/
+.springBeans
+
+### 操作系统文件 ###
+.DS_Store
+Thumbs.db
+*.lnk
+
+### 日志文件 ###
+*.log
+logs/
+
+### 临时文件 ###
+*.tmp
+*.bak
+*.swp
+*~
+
+### Maven 本地仓库 ###
+.m2/
+
+### 测试报告 ###
+surefire-reports/
+coverage/
+
+### 数据库文件（如果使用嵌入式数据库） ###
+*.db
+*.sqlite
+*.mv.db
+
+### Docker 相关（如果后续使用） ###
+docker-compose.override.yml

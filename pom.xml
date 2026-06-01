@@ -101,6 +101,38 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- FastJSON - JSON 数据处理
+        为什么使用 fastjson2 而不是 fastjson？
+        fastjson（1.x 版本）已停止维护，存在安全漏洞
+        fastjson2 是阿里巴巴官方推荐的最新版本，性能更好、更安全
+        fastjson2 的包名也是 com.alibaba.fastjson，所以你的导入语句不需要修改
+        最新版本
+        我使用的是 2.0.43，这是较新的稳定版本
+        你可以根据需要查看最新版本：https://github.com/alibaba/fastjson2/releases
+        -->
+        <!--
+        <dependency>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
+            <version>2.0.43</version>
+        </dependency>
+        -->
+
+        <!-- Jackson JSON处理 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- Fastjson -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>2.0.25</version>
+        </dependency>
+
+
+
         <!-- MyBatis-Plus 适配 Spring Boot 4.x  开始 -->
         <dependency>
             <groupId>com.baomidou</groupId>

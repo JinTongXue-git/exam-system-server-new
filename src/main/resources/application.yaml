@@ -11,16 +11,34 @@ spring:
     url: jdbc:mysql://192.168.187.128:3306/exam_system_new?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=GMT%2b8
     username: root
     password: 123456
+    hikari:
+      connection-test-query: SELECT 1 # 自动检测连接
+      connection-timeout: 60000 #数据库连接超时时间,默认30秒
+      idle-timeout: 500000 #空闲连接存活最大时间，默认600000（10分钟）
+      max-lifetime: 540000 #此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
+      maximum-pool-size: 12 #连接池最大连接数，默认是10
+      minimum-idle: 10 #最小空闲连接数量
+      pool-name: SPHHikariPool # 连接池名称
+
+  # ==============================
+  # Redis 配置（Spring Boot 4.x 新版写法）
+  # ==============================
+#  data:
+#    redis:
+#      host: 192.168.187.128  # 你的Redis地址
+#      port: 6379
+#      password:  # 没密码就空着
+#      database: 0
+#      timeout: 3000ms
+#      # lettuce 连接池（新版标配，代替老Jedis）
+#      lettuce:
+#        pool:
+#          max-active: 8
+#          max-idle: 8
+#          min-idle: 2
+#          max-wait: 100ms
   banner:
     location: classpath:banner.txt
-  hikari:
-    connection-test-query: SELECT 1 # 自动检测连接
-    connection-timeout: 60000 #数据库连接超时时间,默认30秒
-    idle-timeout: 500000 #空闲连接存活最大时间，默认600000（10分钟）
-    max-lifetime: 540000 #此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
-    maximum-pool-size: 12 #连接池最大连接数，默认是10
-    minimum-idle: 10 #最小空闲连接数量
-    pool-name: SPHHikariPool # 连接池名称
 
 
 #用于打印框架生成的sql语句，便于调试
@@ -58,3 +76,4 @@ minio:
   endpoint: http://192.168.187.128:9000   # 你的服务器IP+MinIO端口
   access-key: minioadmin                 # 默认账号（可自定义）
   secret-key: 12345678                 # 默认密码（可自定义）
+

@@ -1,0 +1,136 @@
+package com.atguigu.exam.atguigu;
+
+/**
+ * 项目：exam-system-server-new
+ * 包名：com.atguigu.exam.atguigu
+ * 类名：RedisTest
+ * 描述：TODO
+ * 作者：MechrevoUser1
+ * 日期：2026/6/2 15:43
+ * 用到的注解依赖：
+ */
+
+import com.atguigu.exam.ExamSystemServerNewApplication;
+import com.atguigu.exam.to.Student;
+import com.atguigu.exam.config.RedisConfig;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
+import static org.junit.jupiter.api.Assertions.*;
+
+@SpringBootTest(classes = ExamSystemServerNewApplication.class)
+public class RedisTest {
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    // 测试专用Key前缀，避免与其他数据冲突
+    private static final String TEST_KEY_PREFIX = "test:student:";
+    private static final String TEST_KEY = TEST_KEY_PREFIX + "1";
+
+    // 构建测试用Student对象
+    private Student createTestStudent() {
+        return new Student(1L, "张三", 20, "计算机科学与技术1班");
+    }
+
+    /**
+     * 每个测试方法内部执行：
+     * 1. 删除旧数据（确保测试环境干净）
+     * 2. 创建新数据（为当前测试准备基础数据）
+     */
+    private void prepareTestData() {
+        // 1. 先删除旧数据
+        redisTemplate.delete(TEST_KEY);
+        // 2. 再创建新数据
+        redisTemplate.opsForValue().set(TEST_KEY, createTestStudent());
+    }
+
+    // 测试1：序列化存储（验证无@class字段）
+    @Test
+    public void testSerialization() {
+        prepareTestData();
+
+        // 1. 从Redis获取原始字节数据（验证存储格式）
+        byte[] rawData = redisTemplate.getConnectionFactory().getConnection().get(TEST_KEY.getBytes());
+        String jsonStr = new String(rawData);
+        System.out.println("存储的JSON数据：" + jsonStr);
+
+        // 断言：存储的JSON中不包含@class字段（核心验证）
+        assertFalse(jsonStr.contains("@class"), "序列化后的JSON不应包含@class字段");
+
+        // 2. 反序列化获取对象
+        Student student = (Student) redisTemplate.opsForValue().get(TEST_KEY);
+        assertNotNull(student, "反序列化后的对象不应为null");
+        assertEquals(1L, student.getId(), "学生ID匹配");
+        assertEquals("张三", student.getName(), "学生姓名匹配");
+    }
+
+    // 测试2：查询操作（验证自动反序列化）
+    @Test
+    public void testReadOperation() {
+        prepareTestData();
+
+        Student student = (Student) redisTemplate.opsForValue().get(TEST_KEY);
+        assertNotNull(student);
+        assertEquals(20, student.getAge(), "学生年龄匹配");
+        assertEquals("计算机科学与技术1班", student.getClassName(), "班级名称匹配");
+    }
+
+    // 测试3：更新操作
+    @Test
+    public void testUpdateOperation() {
+        prepareTestData();
+
+        // 先获取原始对象
+        Student student = (Student) redisTemplate.opsForValue().get(TEST_KEY);
+        // 更新属性
+        student.setName("李四");
+        student.setAge(21);
+        // 重新存入Redis
+        redisTemplate.opsForValue().set(TEST_KEY, student);
+
+        // 验证更新结果
+        Student updatedStudent = (Student) redisTemplate.opsForValue().get(TEST_KEY);
+        assertEquals("李四", updatedStudent.getName(), "更新后的姓名匹配");
+        assertEquals(21, updatedStudent.getAge(), "更新后的年龄匹配");
+    }
+
+    // 测试4：删除操作（修复之前的逻辑问题）
+    @Test
+    public void testDeleteOperation() {
+        prepareTestData();  // 先准备好数据（删除旧的→创建新的）
+
+        // 执行删除
+        Boolean deleteResult = redisTemplate.delete(TEST_KEY);
+        assertTrue(deleteResult, "删除操作应返回true");
+
+        // 验证删除结果
+        Student student = (Student) redisTemplate.opsForValue().get(TEST_KEY);
+        assertNull(student, "删除后应查询不到数据");
+    }
+
+    // 测试5：批量操作
+    @Test
+    public void testBatchOperations() {
+        // 先删除所有测试数据
+        redisTemplate.delete(redisTemplate.keys(TEST_KEY_PREFIX + "*"));
+
+        // 批量插入3条数据
+        for (int i = 1; i <= 3; i++) {
+            Student student = new Student((long) i, "学生" + i, 20 + i, "班级" + i);
+            redisTemplate.opsForValue().set(TEST_KEY_PREFIX + i, student);
+        }
+
+        // 批量查询验证
+        for (int i = 1; i <= 3; i++) {
+            Student student = (Student) redisTemplate.opsForValue().get(TEST_KEY_PREFIX + i);
+            assertNotNull(student);
+            assertEquals("学生" + i, student.getName());
+        }
+
+        // 批量删除
+        Long deleteCount = redisTemplate.delete(redisTemplate.keys(TEST_KEY_PREFIX + "*"));
+        assertEquals(3, deleteCount, "应删除3条数据");
+    }
+}

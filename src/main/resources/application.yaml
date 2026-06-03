@@ -39,6 +39,11 @@ spring:
 #          max-wait: 100ms
   banner:
     location: classpath:banner.txt
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+
+
 
 
 #用于打印框架生成的sql语句，便于调试
@@ -46,6 +51,9 @@ mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   # mapper-locations: classpath*:mapper/*.xml # 扫描的mapper文件路径
+#  global-config:
+#    db-config:
+#      logic-delete-field: isDeleted  # isDeleted是实体类的字段
 
 # Knife4j 配置
 knife4j:

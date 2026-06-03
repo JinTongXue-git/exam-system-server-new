@@ -3,9 +3,12 @@ package com.atguigu.exam.controller;
 
 import com.atguigu.exam.common.Result;
 import com.atguigu.exam.entity.Banner;
+import com.atguigu.exam.service.BannerService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,12 +20,15 @@ import java.util.Map;
  * 轮播图控制器 - 处理轮播图管理相关的HTTP请求
  * 包括图片上传、轮播图的CRUD操作、状态切换等功能
  */
+@Slf4j
 @RestController  // REST控制器，返回JSON数据
 @RequestMapping("/api/banners")  // 轮播图API路径前缀
 @CrossOrigin  // 允许跨域访问
 @Tag(name = "轮播图管理", description = "轮播图相关操作，包括图片上传、轮播图增删改查、状态管理等功能")  // Swagger API分组
 public class BannerController {
 
+    @Autowired
+    private BannerService bannerService;
     
     /**
      * 上传轮播图图片
@@ -49,13 +55,31 @@ public class BannerController {
     }
     
     /**
-     * 获取所有轮播图（管理后台使用）
+     * 获取--"所有"--轮播图（管理后台使用）
      * @return 轮播图列表
      */
     @GetMapping("/list")  // 处理GET请求
     @Operation(summary = "获取所有轮播图", description = "获取所有轮播图列表，包括启用和禁用的，供管理后台使用")  // API描述
     public Result<List<Banner>> getAllBanners() {
-        return Result.success(null);
+//        存在问题：
+//        2.1.日志输出，在controller层展示臃肿  ---》 改到spring的拦截器中去
+//        2.3.返回多余字段
+//        2.4.时间格式错乱，时区有问题
+//
+//        2.2.没有排序，根据banners表中filed sortOrder排序 （越小越优先
+//        2.5.被逻辑删除的字段，没有被排除
+        LambdaQueryWrapper<Banner> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByAsc(Banner::getSortOrder);
+//        queryWrapper.eq(Banner::getIsDeleted , 0 );
+
+//        1. 查询所有轮播图数据集合
+//        2. 封装到"entity"类中
+        List<Banner> bannerList = bannerService.list(queryWrapper);
+//        3. 转换为"vo"（待定）
+//        4. 日志输出
+        log.info("系统信息管理，查询所有轮播图内容结果:{}", bannerList);
+//        5.return Result<List<"vo">>(待定)
+        return Result.success(bannerList);
     }
     
     /**

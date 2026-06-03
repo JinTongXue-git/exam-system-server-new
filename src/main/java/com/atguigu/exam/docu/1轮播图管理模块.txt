@@ -1,0 +1,107 @@
+1.查询所有轮播图列表接口
+    接口分析
+        请求参数： 无
+        响应：
+            {
+            	"code": 200,
+            	"message": "操作成功",
+            	"data": [
+            		{
+            			"id": 1,
+            			"title": "智能考试系统介绍",
+            			"description": "基于AI技术的智能考试平台，支持在线考试、智能组卷等功能",
+            			"imageUrl": "https://example.com/images/banner1.jpg",
+            			"linkUrl": "https://example.com/about",
+            			"sortOrder": 1,
+            			"isActive": true,
+            			"createTime": ""
+            		}
+            	]
+            }
+    业务分析：
+        单表查询全部  mybatis已经集成 ，可直接完成
+    实现：
+        1. 查询所有轮播图数据集合
+        2. 封装到"entity"类中
+        3. 转换为"vo"（待定）
+        4. 日志输出
+        5.return Result<List<"vo">>
+    存在问题：
+        2.1.日志输出，在controller层展示臃肿  ---》 改到spring的拦截器中去
+        2.2.没有排序，根据banners表中filed sortOrder排序 （越小越优先）
+                解决：
+                 LambdaQueryWrapper<Banner> queryWrapper = new LambdaQueryWrapper<>();
+                    queryWrapper.orderByAsc((banner) -> {
+                        return banner.getSortOrder();
+                 });
+        2.3.返回多余字段
+            我们不需要的字段，但是返回了  例如 updataTime idDeleted
+            后端返回给前端的json是  实体类 -转换- json  ，实体类有就会转换
+            忽略不需要的字段：通过jackson依赖包 ，
+            controller -》 handler()方法 -》 java实体类  -转>  json   -发送》前端
+                                                 是springmvc的handlerAdapter组件 掉用外部jackson完成 实体类转json
+            所以：用jackson提供的注解，来完成忽略实体类字段     -》JsonIgnore注解
+            @JsonIgnore：加上后，不接收前端发送的被忽略的字段， 传给前端的json也 会忽略被注释的字段
+
+        2.4.时间格式错乱，时区有问题
+            jackson外部依赖，也是把实体类的时间转成 json的时间 要用的包
+            解决： 用jackson包的@Jsonformt()
+                方案1：局部@JsonFormat(pattern = "yyyy-HH-dd HH:mm:ss" , timezone = "GMT+8"  )
+                2  : 全局配置
+                spring：
+                  jackson:
+                    date-format: yyyy-MM-dd HH:mm:ss
+                    time-zone: GMT+8
+
+        2.5.被逻辑删除的字段，没有被排除
+            1.全局：
+                mybatis-plus:
+                  global-config:
+                    db-config:
+                      logic-delete-field: isDeleted  # isDeleted是实体类的字段
+            2.局部
+                @JsonIgnore
+                @Schema(description = "逻辑删除")
+                @TableField("is_deleted")
+                @TableLogic     //mybatis-plus的局部逻辑删除
+                private Byte isDeleted;
+            3.条件
+                LambdaQueryWrapper<Banner> queryWrapper = new LambdaQueryWrapper<>();
+                        queryWrapper.orderByAsc(Banner::getSortOrder);
+                //        queryWrapper.eq(Banner::getIsDeleted , 0 );
+
+                //        1. 查询所有轮播图数据集合
+                //        2. 封装到"entity"类中
+                        List<Banner> bannerList = bannerService.list(queryWrapper);
+
+
+
+2.获取启用的轮播图
+    接口分析：
+        请求参数无
+        响应参数：
+            {
+            	"code": 200,
+            	"message": "操作成功",
+            	"data": [
+            		{
+            			"id": 1,
+            			"title": "智能考试系统介绍",
+            			"description": "基于AI技术的智能考试平台，支持在线考试、智能组卷等功能",
+            			"imageUrl": "https://example.com/images/banner1.jpg",
+            			"linkUrl": "https://example.com/about",
+            			"sortOrder": 1,
+            			"isActive": true,
+            			"createTime": ""
+            		}
+            	]
+            }
+
+    业务分析:
+        重点关注 banners表中的isActive
+
+        查询
+
+
+
+

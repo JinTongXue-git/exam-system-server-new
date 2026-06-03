@@ -1,6 +1,7 @@
 package com.atguigu.exam.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -15,14 +16,22 @@ public class BaseEntity implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
+
+//    @JsonFormat(pattern = "yyyy-HH-dd HH:mm:ss" , timezone = "GMT+8"  )
     @Schema(description = "创建时间")
     private Date createTime;
 
+
+//    @JsonFormat(pattern = "yyyy-HH-dd HH:mm:ss" , timezone = "GMT+8"  )
+    @JsonIgnore
     @Schema(description = "修改时间")
     private Date updateTime;
 
+
+    @JsonIgnore
     @Schema(description = "逻辑删除")
     @TableField("is_deleted")
+    @TableLogic     //mybatis-plus的局部逻辑删除
     private Byte isDeleted;
 
 }

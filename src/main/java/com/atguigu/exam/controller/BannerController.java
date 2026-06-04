@@ -5,6 +5,7 @@ import com.atguigu.exam.common.Result;
 import com.atguigu.exam.entity.Banner;
 import com.atguigu.exam.service.BannerService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 轮播图控制器 - 处理轮播图管理相关的HTTP请求
@@ -51,7 +51,12 @@ public class BannerController {
     @GetMapping("/active")  // 处理GET请求
     @Operation(summary = "获取启用的轮播图", description = "获取状态为启用的轮播图列表，供前台首页展示使用")  // API描述
     public Result<List<Banner>> getActiveBanners() {
-        return Result.success(null);
+//        1.启用状态（字段isActive）， 用LambdaQueryWrapper类写查询条件
+        LambdaQueryWrapper<Banner> wrapper = new LambdaQueryWrapper();
+        wrapper.eq(Banner::getIsActive , true );
+        wrapper.orderByAsc(Banner::getSortOrder);
+        List<Banner> bannerList = bannerService.list(wrapper);
+        return Result.success(bannerList);
     }
     
     /**
@@ -139,6 +144,19 @@ public class BannerController {
     public Result<String> toggleBannerStatus(
             @Parameter(description = "轮播图ID") @PathVariable Long id, 
             @Parameter(description = "是否启用，true为启用，false为禁用") @RequestParam Boolean isActive) {
-        return null;
+//        1.传入mybatisplus的UpdateWrapper条件类，给服务层的IService<Banner>.update(wrapper)
+//        update banners set is_active = （Boolean isActive） where id = （Long id） and is_deleted = （ 0是false | 1 是true）
+        LambdaUpdateWrapper<Banner> wrapper = new LambdaUpdateWrapper<Banner>();
+        wrapper.eq(Banner::getId, id);
+        wrapper.set(Banner::getIsActive, isActive);
+
+        boolean update = bannerService.update(wrapper);
+
+//        2.跟新维护，banners表的update_time字段  ok
+//        3.日志输出   ok
+//        4.返回Result.success(data:"" ，string:"" )
+
+
+        return new Result().success("修改banners表的is_active(启动状态)为成功");
     }
 } 

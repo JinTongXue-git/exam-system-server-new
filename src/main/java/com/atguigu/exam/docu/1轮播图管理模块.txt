@@ -40,7 +40,7 @@
             忽略不需要的字段：通过jackson依赖包 ，
             controller -》 handler()方法 -》 java实体类  -转>  json   -发送》前端
                                                  是springmvc的handlerAdapter组件 掉用外部jackson完成 实体类转json
-            所以：用jackson提供的注解，来完成忽略实体类字段     -》JsonIgnore注解
+            所以：用jackson提供的注解，来完成忽略实体类字段     -》@JsonIgnore注解
             @JsonIgnore：加上后，不接收前端发送的被忽略的字段， 传给前端的json也 会忽略被注释的字段
 
         2.4.时间格式错乱，时区有问题
@@ -76,7 +76,8 @@
 
 
 
-2.获取启用的轮播图
+
+2.获取所有启用的轮播图
     接口分析：
         请求参数无
         响应参数：
@@ -99,8 +100,48 @@
 
     业务分析:
         重点关注 banners表中的isActive
+        查询整张banners表，条件是isActive==1（true）， 去除逻辑删除字段，注意日期格式，
+        时区，不要有多余字段（例如 updataTime idDeleted）
+        按照banners表的sort_order  从小到大排序
+    实现
+        1.启用状态（字段isActive）， 用LambdaQueryWrapper类写查询条件
+        2.去除逻辑删除字段 的行  ， 用局部的mybatisplus的注解@TableLogic
+        3. 用全局的jackson外部依赖，的配置 spring:   解决日期格式和时区
+                                        jackson:
+                                            date-format: yyyy-MM-dd HH:mm:ss
+                                            time-zone: GMT+8
+        4.多余字段，用jackson包的@JsonIgnore注解
+        5. sort_order  从小到大排序 , 用LambdaQueryWrapper.OrderByAsc()
 
-        查询
+
+
+3.修改指定id的轮播图，的起用状态   （@PutMapping("/toggle/{id}") toggleBannerStatus()方法）
+    接口分析：
+        请求参数：
+            path ： {id}  轮播图id
+            query/param： isActive字段是ture或者是false
+        response：
+            {
+            	"code": 200,
+            	"message": "操作成功",
+            	"data": ""
+            }
+    业务分析：
+        1.传入mybatisplus的UpdateWrapper条件类，给服务层的IService<Banner>.update(wrapper)
+        2.跟新维护，banners表的update_time字段
+        3.日志输出
+        4.返回Result.success(String:"")
+    realizing：
+        1.用mybatisplus的LambdaUpdateWrapper条件跟新类
+        2.mysql表加上CURRENT_TIMESTAMP ON UPDATE约束 自身自动维护
+        3. 在controller的aspect类中完成
+        4. ok
+        5. 多余字段已经屏蔽用jackson包的@JsonIgnore
+
+
+
+
+
 
 
 

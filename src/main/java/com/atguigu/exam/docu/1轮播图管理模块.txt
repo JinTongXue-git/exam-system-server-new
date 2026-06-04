@@ -140,6 +140,61 @@
 
 
 
+4.根据ID删除指定的轮播图
+    接口分析：
+        请求参数：
+            path：{id}  轮播图id
+        response：
+            {
+            	"code": 200,
+            	"message": "操作成功",
+            	"data": ""
+            }
+    业务分析：
+        1.根据id删除指定的轮播图
+        2.返回Result.success("id为{}的轮播图删除成功")
+        3.日志输出
+    realizing：
+        1.用mybatisplus的业务层的removeById(id);方法配合@TableLogic
+        2.返Result.success("id为{}的轮播图删除成功")
+        3.在controller的切面类（BannerControllerAspect）中写日志，用切入点表达式
+    注意：
+        时间格式，时区，多余字段，删除是逻辑删除，维护跟新时间
+
+
+5.根据ID获取轮播图
+    接口分析：
+        请求参数：
+            path ： {id}
+        response：
+            {
+                "code": 200,
+                "message": "操作成功",
+                "data": {
+                	"id": 0,
+                	"createTime": "",
+                	"title": "智能考试系统介绍",
+                	"description": "基于AI技术的智能考试平台，支持在线考试、智能组卷等功能",
+                	"imageUrl": "https://example.com/images/banner1.jpg",
+                	"linkUrl": "https://example.com/about",
+                	"sortOrder": 1,
+                	"isActive": true
+                }
+            }
+        业务分析：
+            1.条件查询 根据id
+            2.返回new Result<Banner>.success(oneBanner);
+        realizing:
+            1.用mybatisplus的lambdaquerywrapper条件类实现
+        注意：
+            时区，时间格式，多余字段，被逻辑删除的不要查，
+
+
+
+
+
+
+
 
 
 

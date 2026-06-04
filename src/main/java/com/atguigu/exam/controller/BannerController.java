@@ -45,7 +45,7 @@ public class BannerController {
     }
     
     /**
-     * 获取启用的轮播图（前台首页使用）
+     * 获取所有启用的轮播图（前台首页使用）
      * @return 轮播图列表
      */
     @GetMapping("/active")  // 处理GET请求
@@ -96,8 +96,11 @@ public class BannerController {
     @Operation(summary = "根据ID获取轮播图", description = "根据轮播图ID获取单个轮播图的详细信息")  // API描述  
     public Result<Banner> getBannerById(@Parameter(description = "轮播图ID")
                                             @PathVariable Long id) {
+//        List<Banner> list = bannerService.list(new LambdaQueryWrapper<Banner>().eq(Banner::getId, id));
+        Banner banner = bannerService.getById(id);
 
-      return Result.error("轮播图不存在");
+
+        return Result.error("轮播图不存在");
     }
     
     /**
@@ -123,14 +126,15 @@ public class BannerController {
     }
     
     /**
-     * 删除轮播图
+     * 根据ID删除指定的轮播图
      * @param id 轮播图ID
      * @return 操作结果
      */
     @DeleteMapping("/delete/{id}")  // 处理DELETE请求
     @Operation(summary = "删除轮播图", description = "根据ID删除指定的轮播图")  // API描述
     public Result<String> deleteBanner(@Parameter(description = "轮播图ID") @PathVariable Long id) {
-        return null;
+        bannerService.removeById(id);
+        return new Result<>().success("轮播图删除成功------") ;
     }
     
     /**

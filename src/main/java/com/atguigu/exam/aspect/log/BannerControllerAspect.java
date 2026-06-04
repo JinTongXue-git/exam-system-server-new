@@ -29,7 +29,7 @@ public class BannerControllerAspect {
     public void logPointcut(){}
 
     /**
-     * 环绕通知：方法执行前后增强
+     * 获取所有启用的轮播图（前台首页使用）
      */
     @Around("execution(* com.atguigu.exam.controller.BannerController.getActiveBanners(..) )")
     public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -65,6 +65,64 @@ public class BannerControllerAspect {
         return result;
     }
 
+    /**
+     * 获取--"所有"--轮播图（管理后台使用）
+     * */
+    @Around("execution(* com.atguigu.exam.controller.BannerController.getAllBanners(..) )")
+    public Object getAllBanners(ProceedingJoinPoint joinPoint) throws Throwable {
+        // 方法执行前
+        String methodName = joinPoint.getSignature().getName();
+        log.info("执行方法：{}", methodName);
+        long start = System.currentTimeMillis();
+
+        Object result = joinPoint.proceed();
+        List<Banner> banners = null;
+        if (result instanceof Result ){
+            banners = ((Result<List<Banner>>) result).getData();
+        }
+        log.info("获取到 {} 条轮播图 , 耗时: {}ms", banners != null ? banners.size() : 0, System.currentTimeMillis() - start);
+        return result;
+
+    }
+
+
+
+    @Around("execution(* com.atguigu.exam.controller.BannerController.getBannerById(..))")
+    public Object getBannerById(ProceedingJoinPoint joinPoint) throws Throwable {
+
+        Object[] args = joinPoint.getArgs();
+        Long id =  args.length == 1 ? (Long)args[0] : null;
+        log.info("获取轮播图详情，ID: {}------", id);
+        long start = System.currentTimeMillis();
+        Object result = joinPoint.proceed();
+        log.info("获取轮播图详情，ID: {},耗时: {}ms------", id, System.currentTimeMillis() - start);
+        return result;
+
+    }
+
+
+
+//    删除轮播图
+    @Around("execution(* com.atguigu.exam.controller.BannerController.deleteBanner(..))")
+    public Object deleteBanner(ProceedingJoinPoint joinPoint) throws Throwable {
+        // 获取方法参数
+        Object[] args = joinPoint.getArgs();
+        Long id = args.length == 1 ? (Long) args[0] : null;
+
+        log.info("删除轮播图，ID:{}", id);
+        long start = System.currentTimeMillis();
+        Object result = joinPoint.proceed();
+        log.info("删除轮播图，ID: {},{}耗时: {}ms",
+                id,  "删除成功" ,System.currentTimeMillis() - start);
+        return result;
+    }
+
+
+
+
+
+
+    /**切换轮播图状态*/
     @Around("execution(* com.atguigu.exam.controller.BannerController.toggleBannerStatus(..))")
     public Object toggleBannerStatus(ProceedingJoinPoint joinPoint) throws Throwable {
         // 获取方法参数

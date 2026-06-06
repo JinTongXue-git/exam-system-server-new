@@ -1,19 +1,267 @@
 
-
 1.获取分类列表（包含题目数量）api接口（com.atguigu.exam.controller.CategoryController.getCategories）
     业务分析
-        查询所有 非逻辑删除的分类信息合集 ， 用sort排序，排序字段为sort，排序方式为asc序。
-        以及查询分类的对应  的 题目数量
-
+    查询所有非逻辑删除的分类信息合集，用sort排序，排序字段为sort，排序方式为asc序。
+        以及查询分类对应的题目数量
         多表查询
          是一个多表的查询（分类+题目）
          方案1：多表查询（分类信息+连接+题目分组查询）
          方案2：分步查询（单表查询分类信息-》每个分类id-》题目表中题目数量）
          方案3：分类表集合+题目表中分类id和题目数量+java代码进行数据逻辑处理
     实现：
+        采用方案3：分步查询 + Java代码组装
+
+        调用链路：
+        Controller: CategoryController.getCategories()
+            ↓
+        Service: CategoryServiceImpl.findCategoryList()
+            ↓
+        Mapper: QuestionMapper.selectCategoryQuestionCount()
+
+        具体步骤：
+        步骤1：查询所有分类，按sort字段升序排列
+            - 使用 MyBatis-Plus 的 list(queryWrapper) 方法
+            - LambdaQueryWrapper 构建查询条件：orderByAsc(Category::getSort)
+            - 返回 List<Category>
+
+        步骤2：统计每个分类下的题目数量
+            - 调用 QuestionMapper.selectCategoryQuestionCount()
+            - SQL: SELECT category_id, COUNT(*) count FROM questions WHERE is_deleted = 0 GROUP BY category_id
+            - 返回 List<Map<String, Long>>，示例：[{category_id: 14, count: 5}, {category_id: 15, count: 3}]
+
+        步骤3：将题目数量列表转换为 Map，方便快速查找
+            - 使用 Java Stream API：questionCountList.stream().collect(Collectors.toMap(...))
+            - 转换后：{14: 5, 15: 3, ...}
+            - 时间复杂度：O(m)，m 为题目分类数量
+
+        步骤4：将题目数量填充到对应的分类对象中
+            - 遍历 categoryList，通过 category.getId() 从 Map 中获取题目数量
+            - 使用 getOrDefault(categoryId, 0L) 处理没有题目的分类，默认值为 0
+            - 调用 category.setCount(questionCount) 设置题目数量
+
+        时间复杂度：O(n + m)
+            - n 为分类数量，m 为题目数量
+            - 查询分类：O(n)
+            - 统计题目数量：O(m)
+            - 构建 Map：O(m)
+            - 填充数量：O(n)
+
+        优势：
+            - 避免 N+1 查询问题（方案2会导致多次数据库查询）
+            - 避免复杂的 JOIN 查询（方案1在多表关联时性能较差）
+            - Java 内存中组装数据，性能最优
 
 
+2.获取分类树形结构 api接口（com.atguigu.exam.controller.CategoryController.getCategoryTree）
+    业务分析
+        这个接口是给前端树形组件用的，比如 ElementUI 的 el-tree 或者 Ant Design 的 Tree 组件。
+        前端需要的是一个嵌套的树形结构，而不是平铺的列表。
+
+        核心需求：
+        - 只返回一级分类（parentId == 0 的根节点）
+        - 每个一级分类下面要挂载它的子分类（通过 children 字段）
+        - 每个分类的题目数量要累加：父分类的 count = 自身题目数 + 所有子分类题目数之和
+
+        数据转换思路：
+        数据库里存的是平铺结构（每条记录都有 parentId 指向父节点）
+        前端要的是树形结构（父节点里面嵌套子节点列表）
+        所以需要在 Java 代码里做一次「平铺 → 树形」的转换
+
+    实现：
+        调用链路：
+        Controller: CategoryController.getCategoryTree()
+            ↓
+        Service: CategoryServiceImpl.findCategoryTreeList()
+
+        具体步骤：
+        步骤1-4：和 getCategories 接口一样
+            - 查询所有分类，按 sort 升序排列
+            - 统计每个分类的题目数量
+            - 转成 Map 方便查找
+            - 把题目数量填充到每个分类对象中
+
+        步骤5：按 parentId 分组，构建「父ID → 子分类列表」的映射
+            - 使用 Stream API 的 groupingBy(Category::getParentId)
+            - 转换后得到：{ 0: [选择题, 判断题, 简答题], 13: [Java基础, Java进阶...], 14: [Java语法...] }
+            - 这样就能通过父ID快速找到它的所有子分类
+
+        步骤6：筛选出一级分类（根节点）
+            - 过滤条件：parentId == 0
+            - 得到：[ {id:13, name:"选择题"}, {id:14, name:"判断题"}, {id:15, name:"简答题"} ]
+
+        步骤7：为每个一级分类挂载子分类，并累加题目总数
+            - 遍历 rootCategories，通过 root.getId() 从 childrenByParentId 中取出子分类列表
+            - 调用 root.setChildren(children) 把子分类挂上去
+            - 计算题目总数：root.setCount(自身count + 所有子分类count之和)
+
+        最终返回的数据结构示例：
+        [
+          {
+            id: 13, name: "选择题", parentId: 0, count: 14,
+            children: [
+              { id: 16, name: "Java基础", parentId: 13, count: 3, children: null },
+              { id: 17, name: "Java进阶", parentId: 13, count: 2, children: null },
+              ...
+            ]
+          },
+          {
+            id: 14, name: "判断题", parentId: 0, count: 6,
+            children: [
+              { id: 21, name: "Java语法", parentId: 14, count: 2, children: null },
+              ...
+            ]
+          },
+          ...
+        ]
+
+        时间复杂度：O(n + m)
+            - n 为分类数量，m 为题目数量
+            - 分组操作：O(n)
+            - 过滤根节点：O(n)
+            - 挂载子分类：O(n)
+            - 总体：O(n + m)
+
+        优势：
+            - 一次查询搞定，不需要递归查数据库
+            - 内存中组装树形结构，性能高
+            - 前端拿到数据后可以直接扔给树形组件渲染
 
 
+3.添加分类 api接口（com.atguigu.exam.controller.CategoryController.addCategory）
+    接口信息
+        请求方式：POST
+        请求路径：/api/categories
+        请求体：Category 对象（name、parentId、sort 等字段）
+        响应：{ code: 200, message: "操作成功", data: null }
+
+    业务分析
+        添加分类的核心逻辑就一件事：保证同一个父分类下不会出现重名的分类。
+
+        校验规则：
+        - 同一个 parentId 下，name 不能重复
+        - 不同 parentId 下，name 可以重复（比如"选择题"和"判断题"下都可以有"Java基础"这个子分类）
+
+        为什么不校验 parentId 是否存在？
+        - 因为 parentId=0 表示一级分类，parentId>0 表示子分类
+        - 如果传了一个不存在的 parentId，后续查询树形结构时会自动过滤掉，不会报错
+
+    实现：
+        调用链路：
+        Controller: CategoryController.addCategory()
+            ↓
+        Service: CategoryServiceImpl.saveCategory()
+
+        具体步骤：
+        步骤1：校验名称是否重复
+            - 构建查询条件：WHERE parent_id = ? AND name = ?
+            - 调用 count(wrapper) 统计数量
+            - 如果 count > 0，说明已存在同名分类，抛出 RuntimeException 拦截
+
+        步骤2：保存分类
+            - 调用 MyBatis-Plus 的 save(category) 方法
+            - 自动填充 BaseEntity 中的 createTime、updateTime、isDeleted 等字段
+            - 主键 ID 自动回显到 category 对象中
+
+        注意事项：
+            - 如果 parentId 传了不存在的值，不会报错，但会导致数据孤儿（建议前端做校验）
+            - sort 字段如果不传，默认为 null，排序时会被排到最后
 
 
+4.更新分类 api接口（com.atguigu.exam.controller.CategoryController.updateCategory）
+    接口信息
+        请求方式：PUT
+        请求路径：/api/categories
+        请求体：Category 对象（必须包含 id 字段）
+        响应：{ code: 200, message: "操作成功", data: null }
+
+    业务分析
+        更新分类和添加分类的校验逻辑类似，但多了一个关键点：要排除自己。
+
+        校验规则：
+        - 同一个 parentId 下，name 不能和其他分类重复
+        - 但是可以和自己同名（因为可能只改了 sort 字段，没改 name）
+
+        为什么需要排除自己？
+        - 假设 id=16 的分类叫"Java基础"，你更新它但不改名字
+        - 如果不排除自己，查询时会查到自己，误判为"名称重复"，导致更新失败
+
+    实现：
+        调用链路：
+        Controller: CategoryController.updateCategory()
+            ↓
+        Service: CategoryServiceImpl.updateCategory()
+
+        具体步骤：
+        步骤1：校验名称是否重复（排除自己）
+            - 构建查询条件：WHERE parent_id = ? AND name = ? AND id != ?
+            - 第三个条件 id != ? 就是排除自己的关键
+            - 如果 count > 0，说明和其他分类重名了，抛出异常
+
+        步骤2：更新分类
+            - 调用 MyBatis-Plus 的 updateById(category) 方法
+            - 只更新传入的非 null 字段（动态 SQL）
+            - 自动更新 updateTime 字段
+
+        SQL 示例：
+            更新前校验：SELECT COUNT(*) FROM categories WHERE parent_id=13 AND name='Java基础' AND id!=16
+            更新操作：UPDATE categories SET name=?, sort=? WHERE id=16
+
+
+5.删除分类 api接口（com.atguigu.exam.controller.CategoryController.deleteCategory）
+    接口信息
+        请求方式：DELETE
+        请求路径：/api/categories/{id}
+        路径参数：id（分类ID）
+        响应：{ code: 200, message: "操作成功", data: null }
+
+    业务分析
+        删除分类是最复杂的操作，因为要考虑数据安全问题，必须做防御性编程。
+
+        三层防御机制：
+        第一层：分类是否存在
+            - 如果 id 对应的分类不存在，直接抛异常，避免误删
+
+        第二层：一级分类不能删除
+            - parentId == 0 的是一级分类（如"选择题"、"判断题"）
+            - 一级分类是系统的基础数据结构，删除会导致整个分类体系崩溃
+            - 所以直接禁止删除一级分类
+
+        第三层：分类下有关联题目不能删除
+            - 如果分类下还有题目，删除分类会导致题目失去归属
+            - 必须先删除或迁移所有题目，才能删除分类
+
+        注意：这里没有处理子分类的删除
+            - 当前实现只检查了题目，没有检查子分类
+            - 如果分类下有子分类，删除后子分类会变成孤儿（parentId 指向不存在的父节点）
+            - 建议后续补充：检查是否有子分类，有则禁止删除或级联删除
+
+    实现：
+        调用链路：
+        Controller: CategoryController.deleteCategory()
+            ↓
+        Service: CategoryServiceImpl.removeCategory()
+
+        具体步骤：
+        步骤1：检查分类是否存在
+            - 调用 getById(id) 查询分类
+            - 如果返回 null，说明分类不存在，抛出异常
+
+        步骤2：检查是否为一级分类
+            - 判断 category.getParentId() == 0
+            - 如果是一级分类，抛出异常："一级分类不能删除"
+
+        步骤3：检查是否有关联题目
+            - 构建查询条件：WHERE category_id = ?
+            - 调用 questionMapper.selectCount(wrapper) 统计题目数量
+            - 如果 count > 0，抛出异常："该分类下有 X 个关联题目，不能删除"
+
+        步骤4：执行逻辑删除
+            - 调用 removeById(id) 方法
+            - 由于 Category 继承了 BaseEntity，且 isDeleted 字段标注了 @TableLogic
+            - MyBatis-Plus 会自动执行 UPDATE 而不是 DELETE：
+              UPDATE categories SET is_deleted=1, update_time=NOW() WHERE id=?
+
+        注意事项：
+            - 逻辑删除后，数据还在数据库里，只是 is_deleted=1
+            - 后续查询会自动过滤掉已删除的数据（MyBatis-Plus 自动拼接 WHERE is_deleted=0）
+            - 如果需要彻底删除，需要调用物理删除方法（但一般不推荐）

@@ -225,10 +225,64 @@
                 "message": "操作成功",
                 "data": "回显地址"
             }
-        业务分析：
-            1.文件非空
-            2.文件类形
-            3.掉哟业务层的FileUploadService的文件上传接口
+    业务分析：
+        1.文件非空
+        2.文件类形
+        3.掉哟业务层的FileUploadService的文件上传接口
+    问题：
+        文件上传时，文件大小不能超过10MB，springboot默认是1MB，需要在application.yml中配置。
+        spring：
+          servlet:
+            multipart:
+              max-file-size: 100MB  # 单个文件最大
+              max-request-size: 200MB # 单次表单总大小
+
+
+8.添加轮播图接口
+    接口分析：
+        请求参数：POST /banner/add
+            {
+              "title": "智能考试系统介绍",
+              "description": "基于AI技术的智能考试平台，支持在线考试、智能组卷等功能",
+              "imageUrl": "https://example.com/images/banner1.jpg",
+              "linkUrl": "https://example.com/about",
+              "sortOrder": 1,
+              "isActive": true
+            }
+        response：
+            {
+                "code": 200,
+                "message": "操作成功",
+                "data": null
+            }
+    业务分析：
+        1.单表的保存
+            用mybatisplus的方法
+        2.注意默认值 create_time, update_time, is_deleted  id 自动递增
+
+
+9.更新轮播图接口
+    接口分析：
+        请求参数：POST /banner/update
+             {
+               "id": ？？？,  <--- 注意带主键ID，更新时，必须带 主键ID -->
+               "title": "智能考试系统介绍",
+               "description": "基于AI技术的智能考试平台，支持在线考试、智能组卷等功能",
+               "imageUrl": "https://example.com/images/banner1.jpg",
+               "linkUrl": "https://example.com/about",
+               "sortOrder": 1,
+               "isActive": true
+             }
+        response：
+            {
+                "code": 200,
+                "message": "操作成功",
+                "data": null
+            }
+    业务分析：
+        1.单表的更新
+            用mybatisplus的方法
+        2.注意默认值 create_time  mysql自主维护设置, update_time, is_deleted mybatisplus自主维护 ，  id 自动递增
 
 
 
@@ -236,7 +290,49 @@
 
 
 
+## 轮播图模块总结
+
+本模块是一个典型的单表CRUD操作，主要技术要点如下：
+
+### 1. MinIO集成
+- 引入了MinIO外部依赖，实现分布式文件存储
+- 通过配置MinIO客户端完成文件上传功能
+
+### 2. 逻辑删除机制
+- 删除操作采用逻辑删除而非物理删除
+- 可通过两种方式实现：
+  - 全局配置：在application.yml中统一配置逻辑删除字段
+  - 局部注解：使用MyBatis-Plus提供的 `@TableLogic` 注解
+
+### 3. 时间字段自动维护
+- `create_time`（创建时间）和 `update_time`（更新时间）字段由MySQL自动维护
+- 无需在业务代码中手动设置，减少代码冗余
+
+### 4. 后续优化方向
+- 将日志记录功能提取为独立的AOP切面类（BannerControllerAspect）
+- 通过面向切面编程实现日志的统一管理，提高代码可维护性
+
+### 5. MultipartFile接口学习
+- `MultipartFile` 是Spring框架提供的文件上传接口
+- 该接口有两个实现类：
+  - 生产级实现：官方已将其构造方法私有化，不推荐直接使用
+  - 测试级实现：仅用于单元测试场景
+- **核心思想**：我们只需关注接口定义的方法，无需关心具体实现
+- 框架底层会自动完成文件数据的注入和封装，开发者只需调用接口方法即可
 
 
 
-
+10.轮播图模块总结
+业务思路：
+单表的crud动作
+删除业务-》防御性编程-》1.逻辑删除2.检查是否被其他重要数据引用3.删除以后，删除自己的子数据
+文件上传一》轮播图视频文件等等-》校验逻辑不同-》文件上传提取业务一》filefoldr 技术扩展：
+1.快速集成日志@Slf4j
+2.逻辑删除配置（局部全局）
+3.实体类的属性不生成jsonkey@JsonIgnore
+4.实体类的时间属性进行格式化和时区（注解一全局配置）
+5.wrapper如何装排序一使用updateWrapper
+6.删除的时候，进行防御性编程
+7.非场景启动器的整合步骤（1.导入依赖2.定义读取Properties3.声明application.yml4.自己创建配置类5.使用核心组件）
+8.文件上传大小限制（默认1MB->10MB）
+9.全局异常处理问题

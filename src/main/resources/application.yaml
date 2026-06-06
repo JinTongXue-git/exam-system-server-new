@@ -80,7 +80,11 @@ springdoc:
   swagger-ui:
     enabled: true           # 开启 Swagger UI 界面
     path: /swagger-ui.html  # 原生 Swagger UI 的访问路径
-
+  # 包扫描配置 - 关键！指定要扫描的Controller包路径
+#  packages-to-scan: com.atguigu.exam.controller
+  # 路径匹配配置
+#  paths-to-match: /api/**
+# ------------------------------
 
 
 # ------------------------------
@@ -91,4 +95,3 @@ minio:
   access-key: minioadmin                 # 默认账号（可自定义）
   secret-key: 12345678                 # 默认密码（可自定义）
   bucket-name: banner-images          # 图片存储桶名称
-

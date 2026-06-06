@@ -103,8 +103,7 @@ public class BannerController {
 //        List<Banner> list = bannerService.list(new LambdaQueryWrapper<Banner>().eq(Banner::getId, id));
         Banner banner = bannerService.getById(id);
 
-
-        return Result.error("轮播图不存在");
+        return Result.success(banner , "根据ID获取轮播图查询成功");
     }
     
     /**
@@ -115,7 +114,8 @@ public class BannerController {
     @PostMapping("/add")  // 处理POST请求
     @Operation(summary = "添加轮播图", description = "创建新的轮播图，需要提供图片URL、标题、跳转链接等信息")  // API描述
     public Result<String> addBanner(@RequestBody Banner banner) {
-        return null;
+        bannerService.save(banner);
+        return Result.success("轮播图添加成功------") ;
     }
     
     /**
@@ -126,7 +126,9 @@ public class BannerController {
     @PutMapping("/update")  // 处理PUT请求
     @Operation(summary = "更新轮播图", description = "更新轮播图的信息，包括图片、标题、跳转链接、排序等")  // API描述
     public Result<String> updateBanner(@RequestBody Banner banner) {
-        return null;
+        bannerService.updateById(banner);
+        log.info("轮播图更新成功------ id: {}", banner.getId());
+        return Result.success(null) ;
     }
     
     /**
@@ -138,7 +140,7 @@ public class BannerController {
     @Operation(summary = "删除轮播图", description = "根据ID删除指定的轮播图")  // API描述
     public Result<String> deleteBanner(@Parameter(description = "轮播图ID") @PathVariable Long id) {
         bannerService.removeById(id);
-        return new Result<>().success("轮播图删除成功------") ;
+        return Result.success("轮播图删除成功------") ;
     }
     
     /**
@@ -165,6 +167,6 @@ public class BannerController {
 //        4.返回Result.success(data:"" ，string:"" )
 
 
-        return new Result().success("修改banners表的is_active(启动状态)为成功");
+        return Result.success("修改banners表的is_active(启动状态)为成功");
     }
 } 

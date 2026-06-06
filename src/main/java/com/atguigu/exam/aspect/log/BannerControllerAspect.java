@@ -125,6 +125,36 @@ public class BannerControllerAspect {
 
 
 
+    @Around("execution(* com.atguigu.exam.controller.BannerController.addBanner(..))")
+    public Object addBanner(ProceedingJoinPoint joinPoint) throws Throwable {
+
+        Object[] args = joinPoint.getArgs();
+        Banner banner =  args.length == 1 ? (Banner)args[0] : null;
+        log.info("添加轮播图的内部参数，banner: {}------", banner);
+
+        long start = System.currentTimeMillis();
+        Object result = joinPoint.proceed();
+
+
+        log.info("添加轮播图成功,耗时: {}ms------", System.currentTimeMillis() - start);
+        if (banner != null) {
+            log.info("主键回显ID: {}", banner.getId());
+        }
+        return result;
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 //    删除轮播图
     @Around("execution(* com.atguigu.exam.controller.BannerController.deleteBanner(..))")
     public Object deleteBanner(ProceedingJoinPoint joinPoint) throws Throwable {

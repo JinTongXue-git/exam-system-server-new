@@ -190,6 +190,45 @@
             时区，时间格式，多余字段，被逻辑删除的不要查，
 
 
+6.通用文件上传
+    业务分析：
+        这是一个单独上传文件的接口。
+        1.单独上传文件到服务器
+        2.返回文件路径（文件回显地址）
+    实现：
+       1.整合minio8.5.11的依赖到容器中。
+            用minio的配置类，注册到spring的ioc容器中，在注册之前检查application.yuml配置的bucket，
+            完成bucket的初始化。
+            1.1导入minio的依赖
+            1.2定义properties类，接收minio的参数【endPoint，accesskey，secretkey，bucketName】
+            1.3去application.yml声明我们自己需要的参数（软编码【代码的参数写到配置文件中】）
+            1.4定义minio的配置类（minioClient加入到核心容器即可）
+       2.编写业务层方法，完成文件上传的功能。
+        先完成FileUploadService接口的uploadBannerImage(String folder ,  MultipartFile file) throws Exception方法，完成文件上传的功能
+    注意问题：
+        1. 上传时，文件覆盖问题
+        2. 上传时，文件名唯一问题
+        3. 主动抛出异常，没有捕获，处理   ，比如用”全局异常处理类“
+            springmvc全局异常处理器 @ControllerAdvice @RestControllerAdvice
+            异常处理流程： 1.捕捉全局异常2.收集异常信息（日志->程序员）3.给客户友好反馈
+
+
+7.上传轮播图图片接口
+    接口分析：
+        请求参数：
+            path ： /banner/upload
+            method ： POST
+            request-body ： MultipartFile file
+        response：
+            {
+                "code": 200,
+                "message": "操作成功",
+                "data": "回显地址"
+            }
+        业务分析：
+            1.文件非空
+            2.文件类形
+            3.掉哟业务层的FileUploadService的文件上传接口
 
 
 

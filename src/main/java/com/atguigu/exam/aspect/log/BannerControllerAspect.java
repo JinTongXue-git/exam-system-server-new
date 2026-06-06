@@ -28,6 +28,29 @@ public class BannerControllerAspect {
     @Pointcut()
     public void logPointcut(){}
 
+
+    @Around("execution(*  com.atguigu.exam.controller.BannerController.uploadBannerImage(..))")
+    public Object uploadBannerImage(ProceedingJoinPoint joinPoint) throws Throwable {
+
+        String methodName = joinPoint.getSignature().getName();
+        log.info("执行方法：{}", methodName);
+        long start = System.currentTimeMillis();
+
+        Object object = joinPoint.proceed();
+
+        // 方法执行后
+        log.info("方法执行完成，耗时：{}ms", (System.currentTimeMillis() - start));
+
+
+        if ( object instanceof Result){
+            @SuppressWarnings("unchecked")
+            Result<String> r = (Result<String>) object;
+            log.info("-------上传轮播图成功，返回URL：{}", r.getData());
+        }
+        return object;
+    }
+
+
     /**
      * 获取所有启用的轮播图（前台首页使用）
      */

@@ -43,6 +43,10 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
 
+  servlet:
+    multipart:
+      max-file-size: 100MB  # 单个文件最大
+      max-request-size: 200MB # 单次表单总大小
 
 
 
@@ -66,6 +70,8 @@ knife4j:
     footer-custom-content: 刘老爷的api文档  # 自定义页脚内容
 
 
+
+
 # SpringDoc 配置
 springdoc:
   api-docs:
@@ -81,7 +87,8 @@ springdoc:
 # MinIO 配置
 # ------------------------------
 minio:
-  endpoint: http://192.168.187.128:9000   # 你的服务器IP+MinIO端口
+  end-point: http://192.168.187.128:9000   # 你的服务器IP+MinIO端口
   access-key: minioadmin                 # 默认账号（可自定义）
   secret-key: 12345678                 # 默认密码（可自定义）
+  bucket-name: banner-images          # 图片存储桶名称
 
